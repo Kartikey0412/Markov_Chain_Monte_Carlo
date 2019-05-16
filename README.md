@@ -1,1 +1,5 @@
 # Markov_Chain_Monte_Carlo
+
+This project statistically validates the difference between the optical excitability of two cell-lines- HEK cells and fibroblasts.These two cell-lines form a 2-dimensional cardiac syncytium with the cultured neonatal cardiomyocytes which were investigated for the cardiac wave propagation via light stimulation at a particular wavelength. This novel technique of utilizing light to perturb or control excitable tissues such as heart or brain is termed as ‘Optogenetics’.
+The goal in this project was to fit the two datasets obtained to a strength-duration model using various different statistical approaches and compare which cell line has better optical properties.
+Markov Chain Monte Carlo method was implemented to fit the data to SD curve model in three ways in which we 1) assume normal error distribution, 2) obtain log of the data set to have a log-normal distribution and 3) assume a Weibull distribution.
