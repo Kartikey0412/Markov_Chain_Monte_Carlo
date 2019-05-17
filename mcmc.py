@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Running MCMC simulation with using Weibull Distribution of final Stochastic Variable
 # Finding trace of difference in rheobases of 2 cell lines
-
 import numpy as np
 from pandas import DataFrame, Series
 import pandas as pd
@@ -11,6 +10,7 @@ import scipy
 import numpy as np
 import pymc as mc
 
+#reading file and obtainging constant values
 xls = pd.ExcelFile('data worksheet1.xlsx')
 df = xls.parse('Sheet1', index_col=None, na_values=['NA'])
 a = df['MOI20-30'].values
@@ -22,6 +22,8 @@ d_1 = d[1:]
 
 data_temp = (d_1[0], d_1[3], d_1[6], d_1[9])
 data = np.array(data_temp)
+
+#mean, std.dev, skew and kurtosis
 
 mean = df.mean(axis=0)
 mean_z = mean[1:]
@@ -97,6 +99,8 @@ tn = [0.09, 0.05, 0.03, 0.01]
 q = np.array(p)
 q1 = q.T
 n1 = []
+
+#performing least mean squares fit
 for i in range(len(q1)):
     #    q2=0
     q2 = q1[i]
@@ -174,6 +178,8 @@ for i in range(len(data)):
 
 # BAYESIAN FITTING
 
+#taking uniform priors
+
 Irh_co = mc.Uniform('Irh_co', 0.02, 0.5)
 tch_co = mc.Uniform('tch_co', 0.02, 5.0)
 a = 1.5
@@ -183,27 +189,20 @@ Irh_ch = mc.Uniform('Irh_ch', 0.02, 5.0)
 tch_ch = mc.Uniform('tch_ch', 0.02, 5.0)
 a1 = 1.5
 
-
+# using the deterministic decorator to make our deterministic function
 @mc.deterministic(plot=False)
-#
 def modelco(Irh_co=Irh_co, tch_co=tch_co):
     out = np.empty(len(stdmon))
     out = (Irh_co) / (1 - np.exp(-(tn / ((tch_co) * 0.693))))
-    #    out1=np.log(out)
-    #
-    ##    a1=np.exp(out+(stdmon**2)/2)
-    #
+
     return out
 
 
-#
+
 @mc.deterministic(plot=False)
 def modelch(Irh_ch=Irh_ch, tch_ch=tch_ch):
     out = np.empty(len(stdmon))
     out = (Irh_ch) / (1 - np.exp(-(t / ((tch_ch) * 0.693))))
-    #    out1=np.log(out)
-
-    #    a1=np.exp(out+(stdmon**2)/2)
 
     return out
 
@@ -220,8 +219,9 @@ def diff_tch(tch_ch=tch_ch, tch_co=tch_co):
 
 Dco = mc.Weibull('Dco', alpha=a, beta=modelco / 0.48, value=n1, observed=True)
 Dch = mc.Weibull('Dch', alpha=a1, beta=modelch / 0.48, value=n1c, observed=True)
-#
-#
+
+
+#using the MAP class for setting the vlaues of the stochastic variables to their maximum posteriori values
 m1 = mc.MAP([Irh_co, tch_co, Dco])
 m2 = mc.MAP([Irh_ch, tch_ch, Dch])
 m3 = mc.MAP([diff_irh, Dco, Dch])
@@ -229,28 +229,25 @@ m3 = mc.MAP([diff_irh, Dco, Dch])
 m1.fit()
 m2.fit()
 m3.fit()
-##m4.fit()
-##mz.fit()
+#running the Morkov Chain Monte Carlo algorithm
 m1 = mc.MCMC(m1)
 m2 = mc.MCMC(m2)
 m3 = mc.MCMC(m3)
-##m4=mc.MCMC(m4)
-##mz=mc.MCMC(mz)
+
 m1.sample(50000)
 m2.sample(50000)
 m3.sample(50000)
-##m4.sample(50000)
-##mz.sample(50000)
+
 m1.summary()
 m2.summary()
 m3.summary()
-##m4.summary()
-##mz.summary()
+
 #
 mc.Matplot.plot(m1)
 mc.Matplot.plot(m2)
 mc.Matplot.plot(m3)
 
+#getting the mean value of Irh and tch and making a fit
 psfit_co = (Irh_co.stats()['mean']) / (1 - np.exp(-(tn / ((tch_co.stats()['mean']) * 0.693))))
 psfit_ch = (Irh_ch.stats()['mean']) / (1 - np.exp(-(tn / ((tch_ch.stats()['mean']) * 0.693))))
 
